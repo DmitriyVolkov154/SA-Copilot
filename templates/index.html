@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f8">
+  <title>SA-Copilot — помощник системного аналитика</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="SA-Copilot — главная">
+        <span class="brand-mark">SA</span>
+        <span class="brand-copy"><strong>SA-Copilot</strong><small>WORKSPACE</small></span>
+      </a>
+      <div class="side-label">РАБОЧЕЕ ПРОСТРАНСТВО</div>
+      <button class="nav-item active" type="button"><span class="nav-icon">✳</span> Анализ требований <span class="nav-dot"></span></button>
+      <div class="side-note">
+        <span class="note-icon">⌁</span>
+        <strong>Локальный режим</strong>
+        <p>Запросы обрабатываются локальной моделью Ollama на этом компьютере.</p>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="status-light"></span>
+        <span><strong>Локальная модель</strong><small>Qwen3 · qwen3:8b</small></span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">Рабочее пространство <span>/</span> <strong>Анализ требований</strong></div>
+        <div class="privacy-chip"><span class="status-light"></span> Локально · без платных API</div>
+      </header>
+
+      <section class="page-intro">
+        <div class="eyebrow"><span class="eyebrow-line"></span> SYSTEM ANALYST TOOLKIT</div>
+        <h1>От идеи — к <span>понятным требованиям.</span></h1>
+        <p class="intro-copy">Опиши задачу своими словами. Copilot подготовит структуру требований, критерии приёмки и тест-кейсы, а затем проверит результат на типовые ошибки.</p>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="input-panel panel">
+          <div class="panel-heading">
+            <div><span class="step-number">01</span><h2>Описание задачи</h2></div>
+            <span class="required-label">ОБЯЗАТЕЛЬНО</span>
+          </div>
+          <label class="field-label" for="task">Что должно происходить в системе?</label>
+          <textarea id="task" maxlength="20000" placeholder="Например: после трёх неверных попыток ввода пароля вход блокируется на 15 минут. После успешного входа счётчик ошибок сбрасывается…" spellcheck="true"></textarea>
+          <div class="field-footer"><span id="char-count">0 / 20 000 символов</span><button class="text-button" id="clear-task" type="button">Очистить</button></div>
+          <div class="prompt-tip"><span class="tip-icon">✦</span><p><strong>Подсказка</strong><br>Укажи условия, ограничения, роли пользователей и ожидаемый результат. Если данных не хватает, помощник должен вынести вопросы отдельно, а не додумывать детали.</p></div>
+          <button class="primary-button" id="generate" type="button"><span class="button-icon">✳</span><span id="button-label">Подготовить анализ</span><span class="button-arrow">↗</span></button>
+          <div class="status-line" id="status" role="status" aria-live="polite"><span class="status-light"></span><span>Готов к анализу</span></div>
+        </div>
+
+        <aside class="guide-column">
+          <div class="guide-card panel">
+            <div class="guide-title"><span class="guide-symbol">◎</span><div><h3>Что будет на выходе</h3><p>Структурированный черновик</p></div></div>
+            <ol class="output-list">
+              <li><span>01</span> Цель и границы задачи</li>
+              <li><span>02</span> Функциональные требования</li>
+              <li><span>03</span> Нефункциональные требования</li>
+              <li><span>04</span> Бизнес-правила</li>
+              <li><span>05</span> Критерии приёмки</li>
+              <li><span>06</span> Тест-кейсы</li>
+              <li><span>07</span> Вопросы и предположения</li>
+            </ol>
+          </div>
+          <div class="quality-card">
+            <div class="quality-icon">✓</div><div><strong>Проверка качества</strong><p>После генерации валидатор проверит структуру, числа и сроки, а также некоторые возможные неподтверждённые функции.</p></div>
+          </div>
+          <div class="disclaimer">Результат — черновик аналитика, а не готовое ТЗ. Эвристические проверки могут пропускать ошибки или отмечать корректный текст.</div>
+        </aside>
+      </section>
+
+      <section class="result-section" id="result-section" hidden>
+        <div class="result-heading"><div><span class="step-number">02</span><h2>Результат анализа</h2><p id="result-subtitle">Ответ модели и замечания валидатора</p></div><div class="result-actions"><button class="secondary-button" id="copy-answer" type="button">⧉ Скопировать</button><button class="secondary-button" id="download-answer" type="button">↓ .txt</button></div></div>
+        <div class="validation-panel" id="validation-panel"></div>
+        <article class="answer-card panel"><div class="answer-topline"><span class="answer-label"><span class="status-light"></span> ЧЕРНОВИК АНАЛИТИКА</span><span id="answer-model">Qwen3 · локально</span></div><div id="answer" class="answer-content"></div></article>
+      </section>
+      <footer class="footer"><span>SA-Copilot</span><span>Локальный учебный проект · версия 0.2</span></footer>
+    </main>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
