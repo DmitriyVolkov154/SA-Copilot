@@ -15,11 +15,12 @@
         <span class="brand-copy"><strong>SA-Copilot</strong><small>WORKSPACE</small></span>
       </a>
       <div class="side-label">РАБОЧЕЕ ПРОСТРАНСТВО</div>
-      <button class="nav-item active" type="button"><span class="nav-icon">✳</span> Анализ требований <span class="nav-dot"></span></button>
+      <a class="nav-item active" href="#requirements"><span class="nav-icon">✳</span> Анализ требований</a>
+      <a class="nav-item" href="#process-analysis"><span class="nav-icon">⌘</span> Анализ процессов</a>
       <div class="side-note">
         <span class="note-icon">⌁</span>
         <strong>Локальный режим</strong>
-        <p>Запросы обрабатываются локальной моделью Ollama на этом компьютере.</p>
+        <p>Сценарии хранятся в локальном JSON-файле на этом компьютере.</p>
       </div>
       <div class="sidebar-bottom">
         <span class="status-light"></span>
@@ -29,11 +30,11 @@
 
     <main class="main-content">
       <header class="topbar">
-        <div class="breadcrumb">Рабочее пространство <span>/</span> <strong>Анализ требований</strong></div>
+        <div class="breadcrumb">Рабочее пространство <span>/</span> <strong>SA-Copilot</strong></div>
         <div class="privacy-chip"><span class="status-light"></span> Локально · без платных API</div>
       </header>
 
-      <section class="page-intro">
+      <section class="page-intro" id="requirements">
         <div class="eyebrow"><span class="eyebrow-line"></span> SYSTEM ANALYST TOOLKIT</div>
         <h1>От идеи — к <span>понятным требованиям.</span></h1>
         <p class="intro-copy">Опиши задачу своими словами. Copilot подготовит структуру требований, критерии приёмки и тест-кейсы, а затем проверит результат на типовые ошибки.</p>
@@ -78,7 +79,52 @@
         <div class="validation-panel" id="validation-panel"></div>
         <article class="answer-card panel"><div class="answer-topline"><span class="answer-label"><span class="status-light"></span> ЧЕРНОВИК АНАЛИТИКА</span><span id="answer-model">Qwen3 · локально</span></div><div id="answer" class="answer-content"></div></article>
       </section>
-      <footer class="footer"><span>SA-Copilot</span><span>Локальный учебный проект · версия 0.2</span></footer>
+
+      <section class="process-section" id="process-analysis">
+        <div class="section-intro">
+          <div class="eyebrow"><span class="eyebrow-line"></span> PROCESS ANALYSIS</div>
+          <h2>Анализ бизнес-процессов</h2>
+          <p>Фиксируй наблюдаемые сценарии, сравнивай варианты расчёта и планируй дополнительные эксперименты. Все записи пока считаются непроверенными черновиками.</p>
+        </div>
+
+        <div class="process-grid">
+          <section class="panel process-form">
+            <div class="panel-heading"><div><span class="step-number">01</span><h2>Новый сценарий</h2></div></div>
+            <label class="field-label" for="process-name">Название процесса</label>
+            <input id="process-name" type="text" maxlength="160" value="Расчёт условий перевозки" placeholder="Например: расчёт условий перевозки">
+            <label class="field-label" for="scenario-parameters">Входные параметры (JSON)</label>
+            <textarea id="scenario-parameters" class="code-input" spellcheck="false">[
+  {"name": "region_from", "value": "Регион А", "status": "observed"},
+  {"name": "product", "value": "Свиньи", "status": "observed"}
+]</textarea>
+            <p class="field-hint">Для каждого параметра укажи name, value и status: observed, hypothesis, confirmed_by_analyst или unknown.</p>
+            <label class="field-label" for="scenario-result">Результат расчёта</label>
+            <input id="scenario-result" type="text" maxlength="500" placeholder="Например: Ввоз разрешён">
+            <label class="field-label" for="scenario-result-status">Достоверность результата</label>
+            <select id="scenario-result-status">
+              <option value="observed" selected>Наблюдал в системе</option>
+              <option value="confirmed_by_analyst">Подтверждено аналитиком</option>
+              <option value="hypothesis">Гипотеза</option>
+              <option value="unknown">Неизвестно</option>
+            </select>
+            <label class="field-label" for="scenario-observations">Наблюдения / действия / вопросы</label>
+            <textarea id="scenario-observations" class="short-input" maxlength="5000" placeholder="Что сделал пользователь? Как отреагировала система? Что осталось непонятным?"></textarea>
+            <button class="primary-button" id="save-scenario" type="button"><span class="button-icon">＋</span><span>Сохранить сценарий</span></button>
+            <div class="status-line" id="scenario-status" role="status"><span class="status-light"></span><span>Сценарии хранятся локально</span></div>
+          </section>
+
+          <section class="panel scenario-list-panel">
+            <div class="panel-heading"><div><span class="step-number">02</span><h2>Сохранённые сценарии</h2></div><button class="text-button" id="refresh-scenarios" type="button">Обновить</button></div>
+            <p class="field-hint">Выбери минимум два сценария одного процесса. Первый выбранный станет базовым.</p>
+            <div id="scenario-list" class="scenario-list"><p class="empty-state">Загружаю сценарии…</p></div>
+            <button class="primary-button" id="compare-scenarios" type="button" disabled><span class="button-icon">⇄</span><span>Сравнить выбранные</span></button>
+            <div id="comparison-result" class="comparison-result" aria-live="polite"></div>
+          </section>
+        </div>
+        <p class="process-disclaimer">Важно: различия между сценариями не доказывают причинно-следственную связь. Если изменились несколько параметров, помощник предложит эксперименты, в которых меняется только один параметр за раз. Результаты нужно проверить вручную.</p>
+      </section>
+
+      <footer class="footer"><span>SA-Copilot</span><span>Локальный учебный проект · версия 0.3</span></footer>
     </main>
   </div>
   <script src="/static/app.js" defer></script>
