@@ -143,6 +143,7 @@ class AppHandler(BaseHTTPRequestHandler):
                     "scenario_id": "SC-" + uuid.uuid4().hex[:10].upper(),
                     "process_name": str(data.get("process_name", "")).strip(),
                     "input_parameters": data.get("input_parameters", []),
+                    "steps": data.get("steps", []),
                     "user_actions": data.get("user_actions", []),
                     "system_responses": data.get("system_responses", []),
                     "calculation_result": data.get(
