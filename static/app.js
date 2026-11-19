@@ -246,6 +246,30 @@
     heading.className = 'process-step-heading';
     const title = document.createElement('strong');
     title.textContent = `Шаг ${number}`;
+    const controls = document.createElement('div');
+    controls.className = 'step-order-controls';
+    const moveUp = document.createElement('button');
+    moveUp.type = 'button';
+    moveUp.className = 'text-button';
+    moveUp.textContent = '↑ Выше';
+    moveUp.addEventListener('click', () => {
+      const previous = card.previousElementSibling;
+      if (previous && previous.classList.contains('process-step-card')) {
+        processSteps.insertBefore(card, previous);
+        updateStepOrders();
+      }
+    });
+    const moveDown = document.createElement('button');
+    moveDown.type = 'button';
+    moveDown.className = 'text-button';
+    moveDown.textContent = '↓ Ниже';
+    moveDown.addEventListener('click', () => {
+      const next = card.nextElementSibling;
+      if (next && next.classList.contains('process-step-card')) {
+        processSteps.insertBefore(next, card);
+        updateStepOrders();
+      }
+    });
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'text-button remove-step';
@@ -260,7 +284,8 @@
       }
       updateStepOrders();
     });
-    heading.append(title, remove);
+    controls.append(moveUp, moveDown, remove);
+    heading.append(title, controls);
 
     const action = document.createElement('textarea');
     action.rows = 2;
