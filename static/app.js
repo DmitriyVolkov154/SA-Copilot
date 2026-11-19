@@ -196,6 +196,197 @@
     }
   };
 
+  const processSteps = document.getElementById('process-steps');
+  let nextStepNumber = 1;
+
+  const makeField = (labelText, control, className = '') => {
+    const wrapper = document.createElement('label');
+    wrapper.className = 'step-field' + (className ? ' ' + className : '');
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    wrapper.append(label, control);
+    return wrapper;
+  };
+
+  const makeInput = (placeholder = '') => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    return input;
+  };
+
+  const makeStatusSelect = (selected = 'observed') => {
+    const select = document.createElement('select');
+    const options = [
+      ['observed', 'Наблюдал в системе'],
+      ['confirmed_by_analyst', 'Подтверждено аналитиком'],
+      ['hypothesis', 'Гипотеза'],
+      ['unknown', 'Неизвестно'],
+    ];
+    for (const [value, label] of options) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    }
+    select.value = selected;
+    return select;
+  };
+
+  const addProcessStep = () => {
+    const empty = processSteps.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    const number = nextStepNumber++;
+    const card = document.createElement('article');
+    card.className = 'process-step-card';
+    card.dataset.stepId = `STEP-${String(number).padStart(3, '0')}`;
+
+    const heading = document.createElement('div');
+    heading.className = 'process-step-heading';
+    const title = document.createElement('strong');
+    title.textContent = `Шаг ${number}`;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'text-button remove-step';
+    remove.textContent = 'Удалить';
+    remove.addEventListener('click', () => {
+      card.remove();
+      if (!processSteps.querySelector('.process-step-card')) {
+        const emptyState = document.createElement('p');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = 'Шаги ещё не добавлены.';
+        processSteps.append(emptyState);
+      }
+      updateStepOrders();
+    });
+    heading.append(title, remove);
+
+    const action = document.createElement('textarea');
+    action.rows = 2;
+    action.placeholder = 'Например: пользователь выбирает регион отправления';
+    const actionStatus = makeStatusSelect();
+    const response = document.createElement('textarea');
+    response.rows = 2;
+    response.placeholder = 'Например: в поле отображается выбранный регион. Если неизвестно — оставь пустым.';
+    const responseStatus = makeStatusSelect();
+    const actionGrid = document.createElement('div');
+    actionGrid.className = 'step-fields-grid';
+    actionGrid.append(
+      makeField('Действие пользователя', action),
+      makeField('Статус действия', actionStatus)
+    );
+    const responseGrid = document.createElement('div');
+    responseGrid.className = 'step-fields-grid';
+    responseGrid.append(
+      makeField('Реакция системы', response),
+      makeField('Статус реакции', responseStatus)
+    );
+
+    const evidenceTitle = document.createElement('div');
+    evidenceTitle.className = 'step-subheading';
+    evidenceTitle.textContent = 'Источник подтверждения (необязательно)';
+    const sourceId = makeInput('Например: screenshot-01 или video-01');
+    const sourceType = document.createElement('select');
+    for (const [value, label] of [
+      ['screenshot', 'Скриншот'],
+      ['video', 'Видео'],
+      ['browser_capture', 'Запись браузера'],
+      ['manual_note', 'Ручная заметка'],
+    ]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      sourceType.append(option);
+    }
+    const timestamp = makeInput('мс от начала видео');
+    timestamp.inputMode = 'numeric';
+    const frame = makeInput('Номер кадра');
+    frame.inputMode = 'numeric';
+    const evidenceGrid = document.createElement('div');
+    evidenceGrid.className = 'step-evidence-grid';
+    evidenceGrid.append(
+      makeField('ID источника', sourceId),
+      makeField('Тип источника', sourceType),
+      makeField('Время, мс', timestamp),
+      makeField('Кадр №', frame)
+    );
+
+    const questions = document.createElement('textarea');
+    questions.rows = 2;
+    questions.placeholder = 'Один открытый вопрос на строку';
+    card.append(
+      heading,
+      actionGrid,
+      responseGrid,
+      evidenceTitle,
+      evidenceGrid,
+      makeField('Открытые вопросы', questions)
+    );
+    card._stepControls = { action, actionStatus, response, responseStatus, sourceId, sourceType, timestamp, frame, questions };
+    processSteps.append(card);
+    updateStepOrders();
+  };
+
+  const updateStepOrders = () => {
+    Array.from(processSteps.querySelectorAll('.process-step-card')).forEach((card, index) => {
+      card.dataset.order = String(index + 1);
+      const title = card.querySelector('.process-step-heading strong');
+      title.textContent = `Шаг ${index + 1} · ${card.dataset.stepId}`;
+    });
+  };
+
+  const collectProcessSteps = () => {
+    return Array.from(processSteps.querySelectorAll('.process-step-card')).map((card, index) => {
+      const fields = card._stepControls;
+      const actionText = fields.action.value.trim();
+      const responseText = fields.response.value.trim();
+      const actionStatusValue = fields.actionStatus.value;
+      const responseStatusValue = fields.responseStatus.value;
+      if (!actionText && actionStatusValue !== 'unknown') {
+        throw new Error(`В шаге ${index + 1} заполни действие или выбери статус «Неизвестно».`);
+      }
+      if (!responseText && responseStatusValue !== 'unknown') {
+        throw new Error(`В шаге ${index + 1} заполни реакцию системы или выбери статус «Неизвестно».`);
+      }
+
+      const evidence = [];
+      const source = fields.sourceId.value.trim();
+      const timeText = fields.timestamp.value.trim();
+      const frameText = fields.frame.value.trim();
+      if (source || timeText || frameText) {
+        const item = {
+          source_id: source,
+          source_type: fields.sourceType.value,
+        };
+        if (timeText) {
+          if (!/^\d+$/.test(timeText)) throw new Error(`В шаге ${index + 1}: время должно быть целым числом миллисекунд.`);
+          item.timestamp_ms = Number(timeText);
+        }
+        if (frameText) {
+          if (!/^\d+$/.test(frameText) || Number(frameText) < 1) throw new Error(`В шаге ${index + 1}: номер кадра должен быть целым числом от 1.`);
+          item.frame_number = Number(frameText);
+        }
+        if (!source) throw new Error(`В шаге ${index + 1}: укажи ID источника доказательства.`);
+        if (item.source_type === 'video' && item.timestamp_ms === undefined) {
+          throw new Error(`В шаге ${index + 1}: для видео укажи время в миллисекундах.`);
+        }
+        evidence.push(item);
+      }
+
+      return {
+        step_id: card.dataset.stepId,
+        order: index + 1,
+        action: { text: actionText, status: actionStatusValue },
+        system_response: { text: responseText, status: responseStatusValue },
+        evidence,
+        open_questions: fields.questions.value.split('\n').map((value) => value.trim()).filter(Boolean),
+      };
+    });
+  };
+
+  document.getElementById('add-process-step').addEventListener('click', addProcessStep);
+
   document.getElementById('save-scenario').addEventListener('click', async () => {
     const processName = document.getElementById('process-name').value.trim();
     const resultValue = document.getElementById('scenario-result').value.trim();
@@ -217,6 +408,7 @@
         body: JSON.stringify({
           process_name: processName,
           input_parameters: parameters,
+          steps: collectProcessSteps(),
           calculation_result: {
             value: resultValue || null,
             status: resultValue ? document.getElementById('scenario-result-status').value : 'unknown',
@@ -226,6 +418,12 @@
       });
       setScenarioStatus(`Сохранён сценарий ${data.scenario.scenario_id}`);
       document.getElementById('scenario-observations').value = '';
+      processSteps.replaceChildren();
+      const emptySteps = document.createElement('p');
+      emptySteps.className = 'empty-state';
+      emptySteps.textContent = 'Шаги ещё не добавлены.';
+      processSteps.append(emptySteps);
+      nextStepNumber = 1;
       await loadScenarios();
     } catch (error) {
       setScenarioStatus(error.message || 'Не удалось сохранить сценарий', true);
