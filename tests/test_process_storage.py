@@ -42,6 +42,36 @@ class ScenarioStoreTests(unittest.TestCase):
         self.assertEqual(self.store.list_scenarios(), [item])
         self.assertTrue(self.path.exists())
 
+    def test_add_and_read_scenario_with_ordered_steps(self):
+        item = scenario("SC-STEP", "A", "Свиньи", "Разрешён")
+        item["steps"] = [
+            {
+                "step_id": "STEP-001",
+                "order": 1,
+                "action": {"text": "Открыть форму", "status": "observed"},
+                "system_response": {"text": "Форма открыта", "status": "observed"},
+                "evidence": [],
+                "open_questions": [],
+            },
+            {
+                "step_id": "STEP-002",
+                "order": 2,
+                "action": {"text": "Выбрать значение", "status": "observed"},
+                "system_response": {"text": "", "status": "unknown"},
+                "evidence": [],
+                "open_questions": ["Какое значение отображается после выбора?"],
+            },
+        ]
+
+        self.store.add_scenario(item)
+        loaded = self.store.list_scenarios()
+
+        self.assertEqual(loaded[0]["steps"], item["steps"])
+        self.assertEqual(
+            [step["order"] for step in loaded[0]["steps"]],
+            [1, 2],
+        )
+
     def test_duplicate_id_is_rejected(self):
         item = scenario("SC-001", "A", "Свиньи", "Разрешён")
         self.store.add_scenario(item)
