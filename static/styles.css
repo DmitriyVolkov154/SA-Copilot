@@ -27,3 +27,5 @@
 .step-subheading{font-size:10px;font-weight:700;color:#737d90;margin:8px 0}
 .step-evidence-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:8px;margin-bottom:11px}
 @media(max-width:700px){.steps-editor-heading{flex-direction:column}.step-fields-grid{grid-template-columns:1fr}.step-evidence-grid{grid-template-columns:1fr 1fr}}
+
+.step-order-controls{display:flex;align-items:center;gap:10px}
