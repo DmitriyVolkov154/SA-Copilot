@@ -107,6 +107,18 @@
               <option value="hypothesis">Гипотеза</option>
               <option value="unknown">Неизвестно</option>
             </select>
+            <div class="steps-editor">
+              <div class="steps-editor-heading">
+                <div>
+                  <label class="field-label">Последовательность действий</label>
+                  <p class="field-hint">Записывай только то, что действительно наблюдал. Если реакция системы неизвестна, оставь её пустой и выбери статус «Неизвестно».</p>
+                </div>
+                <button class="secondary-button" id="add-process-step" type="button">＋ Добавить шаг</button>
+              </div>
+              <div id="process-steps" class="process-steps">
+                <p class="empty-state">Шаги ещё не добавлены.</p>
+              </div>
+            </div>
             <label class="field-label" for="scenario-observations">Наблюдения / действия / вопросы</label>
             <textarea id="scenario-observations" class="short-input" maxlength="5000" placeholder="Что сделал пользователь? Как отреагировала система? Что осталось непонятным?"></textarea>
             <button class="primary-button" id="save-scenario" type="button"><span class="button-icon">＋</span><span>Сохранить сценарий</span></button>
