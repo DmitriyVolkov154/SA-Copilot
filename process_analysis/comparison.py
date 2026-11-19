@@ -88,7 +88,7 @@ def _validate_step(step: Any, scenario_id: str, index: int) -> None:
             )
 
         source_type = evidence.get("source_type")
-        if source_type not in allowed_source_types:
+        if not isinstance(source_type, str) or source_type not in allowed_source_types:
             allowed = ", ".join(sorted(allowed_source_types))
             raise ScenarioValidationError(
                 f"{evidence_context}: недопустимый source_type. Допустимые типы: {allowed}."
