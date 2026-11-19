@@ -42,6 +42,93 @@ def _normalize_status(value: Any, context: str) -> str:
     return status
 
 
+def _validate_step(step: Any, scenario_id: str, index: int) -> None:
+    context = f"{scenario_id}: steps[{index}]"
+    if not isinstance(step, Mapping):
+        raise ScenarioValidationError(f"{context} должен быть объектом.")
+
+    step_id = step.get("step_id")
+    if not isinstance(step_id, str) or not step_id.strip():
+        raise ScenarioValidationError(f"{context}: step_id должен быть непустой строкой.")
+
+    order = step.get("order")
+    if isinstance(order, bool) or not isinstance(order, int) or order < 1:
+        raise ScenarioValidationError(f"{context}: order должен быть целым числом не меньше 1.")
+
+    for field in ("action", "system_response"):
+        item = step.get(field)
+        item_context = f"{context}.{field}"
+        if not isinstance(item, Mapping):
+            raise ScenarioValidationError(f"{item_context} должен быть объектом.")
+        text = item.get("text")
+        if not isinstance(text, str):
+            raise ScenarioValidationError(f"{item_context}.text должен быть строкой.")
+        status = _normalize_status(item.get("status"), f"{item_context}.status")
+        if not text.strip() and status != "unknown":
+            raise ScenarioValidationError(
+                f"{item_context}.text не может быть пустым, если статус не unknown."
+            )
+
+    evidence_items = step.get("evidence", [])
+    if not isinstance(evidence_items, list):
+        raise ScenarioValidationError(f"{context}: evidence должен быть списком.")
+
+    allowed_source_types = {
+        "screenshot", "video", "browser_capture", "manual_note"
+    }
+    for evidence_index, evidence in enumerate(evidence_items):
+        evidence_context = f"{context}.evidence[{evidence_index}]"
+        if not isinstance(evidence, Mapping):
+            raise ScenarioValidationError(f"{evidence_context} должен быть объектом.")
+
+        source_id = evidence.get("source_id")
+        if not isinstance(source_id, str) or not source_id.strip():
+            raise ScenarioValidationError(
+                f"{evidence_context}: source_id должен быть непустой строкой."
+            )
+
+        source_type = evidence.get("source_type")
+        if source_type not in allowed_source_types:
+            allowed = ", ".join(sorted(allowed_source_types))
+            raise ScenarioValidationError(
+                f"{evidence_context}: недопустимый source_type. Допустимые типы: {allowed}."
+            )
+
+        timestamp_ms = evidence.get("timestamp_ms")
+        if timestamp_ms is not None and (
+            isinstance(timestamp_ms, bool)
+            or not isinstance(timestamp_ms, int)
+            or timestamp_ms < 0
+        ):
+            raise ScenarioValidationError(
+                f"{evidence_context}: timestamp_ms должен быть целым числом не меньше 0."
+            )
+
+        frame_number = evidence.get("frame_number")
+        if frame_number is not None and (
+            isinstance(frame_number, bool)
+            or not isinstance(frame_number, int)
+            or frame_number < 1
+        ):
+            raise ScenarioValidationError(
+                f"{evidence_context}: frame_number должен быть целым числом не меньше 1."
+            )
+
+        if source_type == "video" and timestamp_ms is None:
+            raise ScenarioValidationError(
+                f"{evidence_context}: для video необходимо указать timestamp_ms."
+            )
+
+    open_questions = step.get("open_questions", [])
+    if not isinstance(open_questions, list):
+        raise ScenarioValidationError(f"{context}: open_questions должен быть списком.")
+    for question_index, question in enumerate(open_questions):
+        if not isinstance(question, str) or not question.strip():
+            raise ScenarioValidationError(
+                f"{context}: open_questions[{question_index}] должна быть непустой строкой."
+            )
+
+
 def validate_scenario(scenario: Mapping[str, Any]) -> None:
     """Validate one scenario. Raises ScenarioValidationError on invalid data."""
     if not isinstance(scenario, Mapping):
@@ -100,6 +187,29 @@ def validate_scenario(scenario: Mapping[str, Any]) -> None:
             calculation_result.get("status"),
             f"{scenario_id}: calculation_result.status",
         )
+
+    steps = scenario.get("steps", [])
+    if not isinstance(steps, list):
+        raise ScenarioValidationError(
+            f"{scenario_id}: steps должен быть списком."
+        )
+
+    seen_step_ids: set[str] = set()
+    seen_step_orders: set[int] = set()
+    for index, step in enumerate(steps):
+        _validate_step(step, scenario_id, index)
+        step_id = step["step_id"]
+        order = step["order"]
+        if step_id in seen_step_ids:
+            raise ScenarioValidationError(
+                f"{scenario_id}: step_id {step_id!r} указан более одного раза."
+            )
+        if order in seen_step_orders:
+            raise ScenarioValidationError(
+                f"{scenario_id}: значение order {order} указано более одного раза."
+            )
+        seen_step_ids.add(step_id)
+        seen_step_orders.add(order)
 
 
 def _json_equal(left: Any, right: Any) -> bool:
