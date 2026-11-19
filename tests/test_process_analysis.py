@@ -62,6 +62,105 @@ class ScenarioValidationTests(unittest.TestCase):
             validate_scenario(scenario)
 
 
+class ProcessStepValidationTests(unittest.TestCase):
+    def make_step(self, step_id="STEP-001", order=1, response_text="Форма обновилась",
+                  response_status="observed", evidence=None):
+        return {
+            "step_id": step_id,
+            "order": order,
+            "action": {"text": "Пользователь выбирает значение", "status": "observed"},
+            "system_response": {"text": response_text, "status": response_status},
+            "evidence": evidence or [],
+            "open_questions": [],
+        }
+
+    def test_legacy_scenario_without_steps_remains_valid(self):
+        validate_scenario(make_scenario("SC-LEGACY"))
+
+    def test_valid_step_with_video_evidence(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(evidence=[{
+            "source_id": "SRC-001",
+            "source_type": "video",
+            "timestamp_ms": 12500,
+            "frame_number": 38,
+        }])]
+        validate_scenario(scenario)
+
+    def test_unknown_system_response_can_have_empty_text(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(response_text="", response_status="unknown")]
+        validate_scenario(scenario)
+
+    def test_rejects_non_list_steps(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = {}
+        with self.assertRaisesRegex(ScenarioValidationError, "steps должен быть списком"):
+            validate_scenario(scenario)
+
+    def test_rejects_duplicate_step_ids(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(), self.make_step(order=2)]
+        with self.assertRaisesRegex(ScenarioValidationError, "step_id .* более одного раза"):
+            validate_scenario(scenario)
+
+    def test_rejects_duplicate_step_orders(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(), self.make_step(step_id="STEP-002")]
+        with self.assertRaisesRegex(ScenarioValidationError, "order .* более одного раза"):
+            validate_scenario(scenario)
+
+    def test_rejects_non_positive_step_order(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(order=0)]
+        with self.assertRaisesRegex(ScenarioValidationError, "не меньше 1"):
+            validate_scenario(scenario)
+
+    def test_rejects_boolean_step_order(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(order=True)]
+        with self.assertRaisesRegex(ScenarioValidationError, "целым числом"):
+            validate_scenario(scenario)
+
+    def test_rejects_unknown_step_status(self):
+        scenario = make_scenario("SC-001")
+        step = self.make_step()
+        step["action"]["status"] = "guessed"
+        scenario["steps"] = [step]
+        with self.assertRaisesRegex(ScenarioValidationError, "недопустимый статус"):
+            validate_scenario(scenario)
+
+    def test_rejects_empty_text_for_observed_response(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(response_text="")]
+        with self.assertRaisesRegex(ScenarioValidationError, "не может быть пустым"):
+            validate_scenario(scenario)
+
+    def test_video_evidence_requires_timestamp(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(evidence=[{
+            "source_id": "SRC-001", "source_type": "video"
+        }])]
+        with self.assertRaisesRegex(ScenarioValidationError, "необходимо указать timestamp_ms"):
+            validate_scenario(scenario)
+
+    def test_rejects_negative_evidence_timestamp(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(evidence=[{
+            "source_id": "SRC-001", "source_type": "video", "timestamp_ms": -1
+        }])]
+        with self.assertRaisesRegex(ScenarioValidationError, "не меньше 0"):
+            validate_scenario(scenario)
+
+    def test_rejects_invalid_evidence_source_type(self):
+        scenario = make_scenario("SC-001")
+        scenario["steps"] = [self.make_step(evidence=[{
+            "source_id": "SRC-001", "source_type": "unknown_source"
+        }])]
+        with self.assertRaisesRegex(ScenarioValidationError, "недопустимый source_type"):
+            validate_scenario(scenario)
+
+
 class ScenarioComparisonTests(unittest.TestCase):
     def test_detects_changed_and_unchanged_parameters(self):
         baseline = make_scenario(
